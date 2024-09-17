@@ -1,0 +1,546 @@
+<html>
+<head>
+    <title>Gerador de E-mail para Alarmes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .email-preview {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            text-align: left;
+            white-space: pre-wrap;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .select-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .select-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .select-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #editor-container, #editor-container-server {
+            height: 300px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .image-upload {
+            margin-top: 15px;
+            text-align: left;
+        }
+        .image-upload label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            .button {
+                padding: 10px;
+                font-size: 14px;
+            }
+            #editor-container, #editor-container-server {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-menu">
+        <h1>Gerador de E-mail para Alarmes</h1>
+        <a href="#" class="button" onclick="showServiceEmailGenerator()">Gerar E-mail para Alarmes de Serviços</a>
+        <a href="#" class="button" onclick="showServerEmailGenerator()">Gerar E-mail para Alarmes de Servidores</a>
+        <a href="#" class="button" onclick="showNOCEmailGenerator()">Gerar E-mail para Alarmes NOC</a>
+        <a href="#" class="button" onclick="exitApp()">Sair</a>
+    </div>
+
+    <div class="container" id="service-email-generator" style="display: none;">
+        <h1>Gerar E-mail para Alarmes de Serviços</h1>
+        <div class="form-group">
+            <label for="error-type">Tipo de Erro:</label>
+            <select id="error-type" onchange="toggleErrorFields()">
+                <option value="normal">Normal</option>
+                <option value="error500">Erro 500</option>
+            </select>
+        </div>
+        <div id="normal-fields">
+            <div class="form-group">
+                <label for="service">Serviço:</label>
+                <input type="text" id="service" placeholder="Portal Multimarcas - candidatos-api-portais-sevice">
+            </div>
+            <div class="form-group">
+                <label for="error-rate">Taxa de Erro:</label>
+                <input type="text" id="error-rate" placeholder="50%">
+            </div>
+            <div class="form-group">
+                <label for="alert-id">Alerta ID:</label>
+                <input type="text" id="alert-id" placeholder="candidatos-api-portais-service_production_request_POST /candidatos/api/v1/documentos/carta-apresentacao">
+            </div>
+        </div>
+        <div id="error500-fields" style="display: none;">
+            <div class="form-group">
+                <label for="error500-service">Serviço:</label>
+                <select id="error500-service">
+                    <option value="frontend">[PORTAL 3.0] - Erro 500 (Frontend)</option>
+                    <option value="backend">[PORTAL 3.0] - Erro 500 (Backend)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="error500-details">Os últimos erros encontrados foram:</label>
+                <textarea id="error500-details" rows="10" placeholder="Insira os detalhes dos erros aqui..."></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="ticket-number">Número do Chamado:</label>
+            <input type="text" id="ticket-number" placeholder="INC0213336">
+        </div>
+        <div class="select-group">
+            <label for="recipients">Destinatários:</label>
+            <select id="recipients">
+                <option value="op.digital.sava@yduqs.com.br">SAVA e SIRIUS</option>
+                <option value="op.digital.apps@yduqs.com.br">APP ALUNO E APP DOCENTE</option>
+                <option value="op.digital.portais@yduqs.com.br">PORTAL MULTIMARCAS</option>
+                <option value="operacao.yduqs@ciriontechnologies.com">SERVIDORES CIRION</option>
+                <option value="ti-cloud@yduqs.com.br">SERVIDORES CLOUD</option>
+                <option value="datacenter@yduqs.com.br">SERVIDORES DE UNIDADE</option>
+            </select>
+        </div>
+        <div class="image-upload">
+            <label for="service-image">Adicionar imagem:</label>
+            <input type="file" id="service-image" accept="image/*">
+        </div>
+        <button class="button" onclick="generateServiceEmail()">Gerar Email</button>
+        <button class="button" onclick="sendServiceEmail()">Enviar Email</button>
+        <button class="button" onclick="showMainMenu()">Voltar ao Menu Principal</button>
+        <div class="email-preview">
+            <label for="service-email-preview">Pré-visualização do E-mail:</label>
+            <div id="editor-container"></div>
+        </div>
+    </div>
+
+    <div class="container" id="server-email-generator" style="display: none;">
+        <h1>Gerar E-mail para Alarmes de Servidores</h1>
+        <div class="form-group">
+            <label for="server">Servidor:</label>
+            <input type="text" id="server" placeholder="SRV-CIRION-W-PRD-COBRANCA_REGISTRADA-ESRVCISA01-10.150.6.4">
+        </div>
+        <div class="form-group">
+            <label for="hostname">Hostname:</label>
+            <input type="text" id="hostname" placeholder="ESRVCISA01 -10.150.6.4">
+        </div>
+        <div class="form-group">
+            <label for="alarm">Alarme:</label>
+            <input type="text" id="alarm" placeholder="ERRO na Rotina de Envio de Arquivos do Santander">
+        </div>
+        <div class="form-group">
+            <label for="incident-number">Número do Incidente:</label>
+            <input type="text" id="incident-number" placeholder="INC0213336">
+        </div>
+        <div class="select-group">
+            <label for="recipients-server">Destinatários:</label>
+            <select id="recipients-server">
+                <option value="op.digital.sava@yduqs.com.br">SAVA e SIRIUS</option>
+                <option value="op.digital.apps@yduqs.com.br">APP ALUNO E APP DOCENTE</option>
+                <option value="op.digital.portais@yduqs.com.br">PORTAL MULTIMARCAS</option>
+                <option value="operacao.yduqs@ciriontechnologies.com">SERVIDORES CIRION</option>
+                <option value="ti-cloud@yduqs.com.br">SERVIDORES CLOUD</option>
+                <option value="datacenter@yduqs.com.br">SERVIDORES DE UNIDADE</option>
+            </select>
+        </div>
+        <div class="image-upload">
+            <label for="server-image">Adicionar imagem:</label>
+            <input type="file" id="server-image" accept="image/*">
+        </div>
+        <button class="button" onclick="generateServerEmail()">Gerar Email</button>
+        <button class="button" onclick="sendServerEmail()">Enviar Email</button>
+        <button class="button" onclick="showMainMenu()">Voltar ao Menu Principal</button>
+        <div class="email-preview">
+            <label for="server-email-preview">Pré-visualização do E-mail:</label>
+            <div id="editor-container-server"></div>
+        </div>
+    </div>
+
+    <div class="container" id="noc-email-generator" style="display: none;">
+        <h1>Gerar E-mail para Alarmes NOC</h1>
+        <div class="form-group">
+            <label for="noc-alert">Alerta:</label>
+            <input type="text" id="noc-alert" placeholder="Firewall do Palo Alto">
+        </div>
+        <div class="form-group">
+            <label for="noc-host">Host:</label>
+            <input type="text" id="noc-host" placeholder="YDU-FW-BO-RJO11 - 10.150.13.252">
+        </div>
+        <div class="form-group">
+            <label for="noc-alarm">Alarme:</label>
+            <input type="text" id="noc-alarm" placeholder="Informar o alarme ativo">
+        </div>
+        <div class="form-group">
+            <label for="noc-incident-number">Número do Incidente:</label>
+            <input type="text" id="noc-incident-number" placeholder="INCXXXXXX">
+        </div>
+        <div class="select-group">
+            <label for="noc-recipients">Destinatários:</label>
+            <select id="noc-recipients">
+                <option value="redes-cirion">Time de Redes + Cirion</option>
+                <option value="redes">Time de Redes</option>
+            </select>
+        </div>
+        <div class="image-upload">
+            <label for="noc-image">Adicionar imagem:</label>
+            <input type="file" id="noc-image" accept="image/*">
+        </div>
+        <button class="button" onclick="generateNOCEmail()">Gerar Email</button>
+        <button class="button" onclick="generateNOCReport()">Gerar Reporte</button>
+        <button class="button" onclick="sendNOCEmail()">Enviar Email</button>
+        <button class="button" onclick="showMainMenu()">Voltar ao Menu Principal</button>
+        <div class="email-preview">
+            <label for="noc-email-preview">Pré-visualização do E-mail:</label>
+            <div id="editor-container-noc"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script>
+        const ccEmails = {
+            "op.digital.sava@yduqs.com.br": "ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br",
+            "op.digital.apps@yduqs.com.br": "ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br",
+            "op.digital.portais@yduqs.com.br": "ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br",
+            "operacao.yduqs@ciriontechnologies.com": "Operacoes.lumen.yduqs-so@certsys.com.br; datacenter@yduqs.com.br; ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br",
+            "ti-cloud@yduqs.com.br": "datacenter@yduqs.com.br; ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br",
+            "datacenter@yduqs.com.br": "ccenter.monitoramento@estacio.br; ccenter.supervisao@yduqs.com.br; ccenter.qualidade@yduqs.com.br"
+        };
+
+        const quillService = new Quill('#editor-container', {
+            theme: 'snow'
+        });
+
+        const quillServer = new Quill('#editor-container-server', {
+            theme: 'snow'
+        });
+
+        const quillNOC = new Quill('#editor-container-noc', {
+            theme: 'snow'
+        });
+
+        function showServiceEmailGenerator() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('service-email-generator').style.display = 'block';
+        }
+
+        function showServerEmailGenerator() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('server-email-generator').style.display = 'block';
+        }
+
+        function showNOCEmailGenerator() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('noc-email-generator').style.display = 'block';
+        }
+
+        function showMainMenu() {
+            document.getElementById('service-email-generator').style.display = 'none';
+            document.getElementById('server-email-generator').style.display = 'none';
+            document.getElementById('noc-email-generator').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+        }
+
+        function exitApp() {
+            // Implement exit functionality if needed
+            alert('Saindo do aplicativo...');
+        }
+
+        function toggleErrorFields() {
+            const errorType = document.getElementById('error-type').value;
+            const normalFields = document.getElementById('normal-fields');
+            const error500Fields = document.getElementById('error500-fields');
+
+            if (errorType === 'error500') {
+                normalFields.style.display = 'none';
+                error500Fields.style.display = 'block';
+            } else {
+                normalFields.style.display = 'block';
+                error500Fields.style.display = 'none';
+            }
+        }
+
+        function generateServiceEmail() {
+            const errorType = document.getElementById('error-type').value;
+            const ticketNumber = document.getElementById('ticket-number').value;
+            const recipient = document.getElementById('recipients').value;
+            const cc = ccEmails[recipient];
+
+            let emailContent = `Para: ${recipient}\nCC: ${cc}\n\n`;
+
+            if (errorType === 'error500') {
+                const service = document.getElementById('error500-service').value;
+                const errorDetails = document.getElementById('error500-details').value;
+
+                emailContent += `[PORTAL 3.0] - Erro 500 (${service === 'frontend' ? 'Frontend' : 'Backend'}) - ${ticketNumber}
+
+Prezados,
+
+Detectamos excessivos INTERNAL SERVER ERROR (500) da aplicação PORTAL MULTIMARCAS (${service === 'frontend' ? 'Frontend' : 'Backend'}) nos últimos 30 minutos.
+Os últimos erros encontrados foram:
+${errorDetails}
+
+Para maiores informações, por favor consultar os logs disponibilizados no [KIBANA].
+
+`;
+            } else {
+                const service = document.getElementById('service').value;
+                const errorRate = document.getElementById('error-rate').value;
+                const alertId = document.getElementById('alert-id').value;
+
+                emailContent += `${service} - ${ticketNumber}
+
+Prezados,
+
+O serviço ${service} obteve mais de ${errorRate} de taxa de transações que falharam em seu sistema nos últimos 5 minutos.
+As últimas falhas encontradas foram:
+Para maiores informações, por favor consultar os logs disponibilizados no [KIBANA].
+Alerta ID: ${alertId}
+
+Por favor, verifiquem e tomem as medidas necessárias.
+
+`;
+            }
+
+            quillService.setText(emailContent);
+            addImageAndSignature('service-image', quillService);
+        }
+
+        function generateServerEmail() {
+            const server = document.getElementById('server').value;
+            const hostname = document.getElementById('hostname').value;
+            const alarm = document.getElementById('alarm').value;
+            const incidentNumber = document.getElementById('incident-number').value;
+            const recipient = document.getElementById('recipients-server').value;
+            const cc = ccEmails[recipient];
+
+            const emailContent = `Para: ${recipient}
+CC: ${cc}
+
+${server} - ${incidentNumber}
+
+Prezados,
+
+Estamos com o seguinte alarme para o servidor ${server}:
+Host: ${hostname}
+Alarme: ${alarm}
+N° do Incidente: ${incidentNumber}
+
+Por favor, verifiquem e tomem as medidas necessárias.
+
+`;
+
+            quillServer.setText(emailContent);
+
+            addImageAndSignature('server-image', quillServer);
+        }
+
+        function generateNOCEmail() {
+            const alert = document.getElementById('noc-alert').value;
+            const host = document.getElementById('noc-host').value;
+            const alarm = document.getElementById('noc-alarm').value;
+            const incidentNumber = document.getElementById('noc-incident-number').value;
+            const recipientOption = document.getElementById('noc-recipients').value;
+
+            let to, cc;
+            if (recipientOption === 'redes-cirion') {
+                to = "Operacao.Yduqs@ciriontechnologies.com; ti-redes@yduqs.com.br";
+                cc = "priscilla.sotello.ext@ciriontechnologies.com; rodrigo.pinto@certsys.com.br; ccenter.qualidade@yduqs.com.br; ccenter.gerencia@yduqs.com.br; ccenter.monitoramento@estacio.br";
+            } else {
+                to = "ti-redes@yduqs.com.br; noc@estacio.br";
+                cc = "ccenter.qualidade@yduqs.com.br; ccenter.gerencia@yduqs.com.br; ccenter.monitoramento@estacio.br";
+            }
+
+            const greeting = getGreeting();
+
+            const emailContent = `Para: ${to}
+CC: ${cc}
+
+${alert}
+
+Prezados, ${greeting}
+
+Solicitamos a verificação do alerta abaixo para o ${alert}:
+
+Host: ${host}
+
+Alarme: ${alarm}
+
+N° do Incidente: ${incidentNumber}
+
+Por favor, verifiquem e tomem as medidas necessárias.
+
+`;
+
+            quillNOC.setText(emailContent);
+
+            addImageAndSignature('noc-image', quillNOC);
+        }
+
+        function generateNOCReport() {
+            const alert = document.getElementById('noc-alert').value;
+            const host = document.getElementById('noc-host').value;
+            const alarm = document.getElementById('noc-alarm').value;
+            const incidentNumber = document.getElementById('noc-incident-number').value;
+
+            const greeting = getGreeting();
+
+            const reportContent = `${alert} - ${incidentNumber}
+
+Prezados, ${greeting}
+
+Solicitamos a verificação do alerta abaixo para o ${alert}:
+
+Host: ${host}
+
+Alarme: ${alarm}
+
+N° do Incidente: ${incidentNumber}
+
+Por favor, verifiquem e tomem as medidas necessárias.
+
+`;
+
+            quillNOC.setText(reportContent);
+
+            addImageAndSignature('noc-image', quillNOC);
+        }
+
+        function addImageAndSignature(imageInputId, quillEditor) {
+            const imageInput = document.getElementById(imageInputId);
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    quillEditor.insertEmbed(quillEditor.getLength(), 'image', imageUrl);
+                    quillEditor.insertText(quillEditor.getLength(), "\n\nAtenciosamente,\nEquipe Command Center.");
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                quillEditor.insertText(quillEditor.getLength(), "\nAtenciosamente,\nEquipe Command Center.");
+            }
+        }
+
+        function sendServiceEmail() {
+            const recipient = document.getElementById('recipients').value;
+            const cc = ccEmails[recipient];
+            const subject = encodeURIComponent(document.getElementById('service').value + ' - ' + document.getElementById('ticket-number').value);
+            const body = encodeURIComponent(quillService.root.innerHTML);
+            
+            window.location.href = `mailto:${recipient}?cc=${cc}&subject=${subject}&body=${body}`;
+        }
+
+        function sendServerEmail() {
+            const recipient = document.getElementById('recipients-server').value;
+            const cc = ccEmails[recipient];
+            const subject = encodeURIComponent(document.getElementById('server').value + ' - ' + document.getElementById('incident-number').value);
+            const body = encodeURIComponent(quillServer.root.innerHTML);
+            
+            window.location.href = `mailto:${recipient}?cc=${cc}&subject=${subject}&body=${body}`;
+        }
+
+        function sendNOCEmail() {
+            const recipientOption = document.getElementById('noc-recipients').value;
+            let to, cc;
+            if (recipientOption === 'redes-cirion') {
+                to = "Operacao.Yduqs@ciriontechnologies.com; ti-redes@yduqs.com.br";
+                cc = "priscilla.sotello.ext@ciriontechnologies.com; rodrigo.pinto@certsys.com.br; ccenter.qualidade@yduqs.com.br; ccenter.gerencia@yduqs.com.br; ccenter.monitoramento@estacio.br";
+            } else {
+                to = "ti-redes@yduqs.com.br; noc@estacio.br";
+                cc = "ccenter.qualidade@yduqs.com.br; ccenter.gerencia@yduqs.com.br; ccenter.monitoramento@estacio.br";
+            }
+            const subject = encodeURIComponent(document.getElementById('noc-alert').value);
+            const body = encodeURIComponent(quillNOC.root.innerHTML);
+            
+            window.location.href = `mailto:${to}?cc=${cc}&subject=${subject}&body=${body}`;
+        }
+
+        function getGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return "bom dia";
+            if (hour < 18) return "boa tarde";
+            return "boa noite";
+        }
+    </script>
+</body>
+</html>
